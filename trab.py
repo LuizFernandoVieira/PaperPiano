@@ -85,19 +85,19 @@ def get_piano(frame):
     return dilation;
 
 def play_sound(i):
-    if i == 1:
+    if i == 0:
         sound_a.play()
-    elif i == 2:
+    elif i == 1:
         sound_b.play()
-    elif i == 3:
+    elif i == 2:
         sound_c.play()
-    elif i == 4:
+    elif i == 3:
         sound_d.play()
-    elif i == 5:
+    elif i == 4:
         sound_e.play()
-    elif i == 6:
+    elif i == 5:
         sound_f.play()
-    elif i == 7:
+    elif i == 6:
         sound_g.play()
 
 def analyze(piano, hand, shadow, top_row, bottom_row):
@@ -189,16 +189,16 @@ def main():
             shadow = cv2.bitwise_and(hand, shadow)
             hand = cv2.bitwise_not(hand)
 
-            channels = []
-            channels.append(hand);
-            channels.append(piano);
-            channels.append(shadow);
-
-            result = cv2.merge(channels);
+            # channels = []
+            # channels.append(hand);
+            # channels.append(piano);
+            # channels.append(shadow);
+            #
+            # result = cv2.merge(channels);
 
             analyze(piano, hand, shadow, top_row, bottom_row)
 
-            cv2.imshow('piano_masks', result)
+            # cv2.imshow('piano_masks', result)
             cv2.imshow('piano', frame)
 
             pressedkey = cv2.waitKey(1)
