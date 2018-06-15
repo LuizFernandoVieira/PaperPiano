@@ -37,7 +37,7 @@ def get_hand(input):
     hand = cv2.dilate(hand, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10)), iterations = 1)
     return hand;
 
-def count_edges(piano, row):
+def count_horizontal_edges(piano, row):
     height, width = piano.shape
     num_edges = 0
 
@@ -54,6 +54,26 @@ def count_edges(piano, row):
 
     return num_edges
 
+def count_vertical_edges(piano, col):
+    height, width = piano.shape
+    num_edges = 0
+
+    heights = []
+
+    i = 1
+    while i < height:
+        piano.reshape(height, width)
+        pixel = piano[i][col]
+        prev_pixel = piano[i-1][col]
+
+        if prev_pixel != pixel and (prev_pixel * pixel) == 0:
+            heights.append(i)
+            num_edges += 1;
+
+        i += 1
+
+    return num_edges
+
 def find_top_and_bottom_row(piano):
     height, width = piano.shape
 
@@ -62,9 +82,9 @@ def find_top_and_bottom_row(piano):
 
     i = height - 6
     while i >= 0:
-        num_edges = count_edges(piano, i)
-        prev_num_edges = count_edges(piano, i + 5)
-        print("prev_num_edges: ", prev_num_edges)
+        num_edges = count_horizontal_edges(piano, i)
+        prev_num_edges = count_horizontal_edges(piano, i + 5)
+        print("prev_num_horizontal_edges: ", prev_num_edges)
 
         if num_edges == 16 and prev_num_edges < 16:
             bottom_row = i
@@ -75,6 +95,28 @@ def find_top_and_bottom_row(piano):
         i -= 5
 
     return (bottom_row, top_row)
+
+def find_left_and_right_row(piano):
+    height, width = piano.shape
+
+    left_row = 0
+    right_row = 0
+
+    i = width - 6
+    while i >= 0:
+        num_edges = count_vertical_edges(piano, i)
+        prev_num_edges = count_vertical_edges(piano, i + 5)
+        print("prev_num_vertical_edges: ", prev_num_edges)
+
+        if num_edges == 3 and prev_num_edges < 3:
+            right_row = i
+
+        if num_edges < 3 and prev_num_edges == 3:
+            left_row = i
+
+        i -= 5
+
+    return (left_row, right_row)
 
 def get_piano(frame):
     piano = copy.deepcopy(frame)
@@ -100,7 +142,7 @@ def play_sound(i):
     elif i == 6:
         sound_g.play()
 
-def analyze(piano, hand, shadow, top_row, bottom_row):
+def analyze(piano, hand, shadow, top_row, bottom_row, left_row, right_row):
     height, width = piano.shape
 
     key_skipped = np.zeros((7), dtype = bool)
@@ -110,8 +152,8 @@ def analyze(piano, hand, shadow, top_row, bottom_row):
     while row > top_row + 5:
         current_key = -1;
 
-        col = 0
-        while col < width:
+        col = left_row
+        while col < right_row:
 
             piano_pixel = piano[row][col]
             piano_prev_pixel = piano[row][col-1]
@@ -161,10 +203,19 @@ def main():
 
     bottom_row = 0
     top_row = 0
+    left_row = 0
+    right_row = 0
+
     bottom_row, top_row = find_top_and_bottom_row(piano_template)
+    left_row, right_row = find_left_and_right_row(piano_template)
 
     print("top: ", top_row)
     print("bottom: ", bottom_row)
+    print("left: ", left_row)
+    print("right: ", right_row)
+
+    bottom_row += 10
+    top_row -= 10
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -189,16 +240,17 @@ def main():
             shadow = cv2.bitwise_and(hand, shadow)
             hand = cv2.bitwise_not(hand)
 
-            # channels = []
-            # channels.append(hand);
-            # channels.append(piano);
-            # channels.append(shadow);
-            #
-            # result = cv2.merge(channels);
+            channels = []
+            channels.append(hand);
+            channels.append(piano);
+            channels.append(shadow);
 
-            analyze(piano, hand, shadow, top_row, bottom_row)
+            result = cv2.merge(channels);
+            cv2.rectangle(result, (left_row,top_row), (right_row,bottom_row), (255,0,0), 3)
 
-            # cv2.imshow('piano_masks', result)
+            analyze(piano, hand, shadow, top_row, bottom_row, left_row, right_row)
+
+            cv2.imshow('piano_masks', result)
             cv2.imshow('piano', frame)
 
             pressedkey = cv2.waitKey(1)
