@@ -120,11 +120,17 @@ def find_left_and_right_row(piano):
 
 def get_piano(frame):
     piano = copy.deepcopy(frame)
-    lower_green = np.array([0,0,0])
-    upper_green = np.array([10,255,33])
-    mask = cv2.inRange(piano, lower_green, upper_green)
+
+    piano = cv2.cvtColor(piano, cv2.COLOR_BGR2GRAY)
+
+    lower_black = np.array([0])
+    upper_black = np.array([40])
+    mask = cv2.inRange(piano, lower_black, upper_black)
     dilation = cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10)))
     return dilation;
+
+    # piano = cv2.cvtColor(piano, cv2.COLOR_BGR2GRAY)
+    # return cv2.adaptiveThreshold(piano, 100, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 151, 2)
 
 def play_sound(i):
     if i == 0:
